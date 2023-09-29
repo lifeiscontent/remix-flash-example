@@ -1,4 +1,7 @@
-import type { MetaFunction } from "@remix-run/node";
+import { redirect } from "@remix-run/node";
+import type { DataFunctionArgs, MetaFunction } from "@remix-run/node";
+import { Form, Link } from "@remix-run/react";
+import { sessionStorage } from "../utils/flash.server";
 
 export const meta: MetaFunction = () => {
   return [
@@ -7,35 +10,33 @@ export const meta: MetaFunction = () => {
   ];
 };
 
+export async function action({ request }: DataFunctionArgs) {
+  const formData = await request.formData();
+  console.log(formData.get("message"));
+  const session = await sessionStorage.getSession(
+    request.headers.get("Cookie")
+  );
+  session.flash("flash", {
+    message: formData.get("message") as string,
+    type: "success",
+  });
+  return redirect("/", {
+    headers: {
+      "Set-Cookie": await sessionStorage.commitSession(session),
+    },
+  });
+}
+
 export default function Index() {
   return (
-    <div style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.8" }}>
-      <h1>Welcome to Remix</h1>
-      <ul>
-        <li>
-          <a
-            target="_blank"
-            href="https://remix.run/tutorials/blog"
-            rel="noreferrer"
-          >
-            15m Quickstart Blog Tutorial
-          </a>
-        </li>
-        <li>
-          <a
-            target="_blank"
-            href="https://remix.run/tutorials/jokes"
-            rel="noreferrer"
-          >
-            Deep Dive Jokes App Tutorial
-          </a>
-        </li>
-        <li>
-          <a target="_blank" href="https://remix.run/docs" rel="noreferrer">
-            Remix Docs
-          </a>
-        </li>
-      </ul>
+    <div>
+      <h1>Index</h1>
+      <Link to="/page">Go to page</Link>
+      <Link to="/">Go to index</Link>
+      <Form method="POST">
+        <input type="text" name="message" />
+        <button type="submit">Submit</button>
+      </Form>
     </div>
   );
 }
